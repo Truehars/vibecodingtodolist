@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding Todo List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">Vibe Coding</div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link active">Home</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="header">
+            <h1>Vibe Coding Todo List</h1>
+            <p>Stay organized and productive</p>
+        </div>
+        <div class="form-container">
+            <form id="todoForm">
+                <div class="input-group">
+                    <input type="text" id="todoInput" placeholder="What needs to be done?" required>
+                    <button type="submit" class="add-btn">Add</button>
+                </div>
+            </form>
+            <div class="task-nav">
+                <button class="task-filter active" data-filter="all">All Tasks</button>
+                <button class="task-filter" data-filter="pending">Remaining</button>
+                <button class="task-filter" data-filter="completed">Completed</button>
+            </div>
+        </div>
+        <div id="todoList" class="todo-list"></div>
+    </div>
+
+    <script>
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let currentFilter = 'all';
+        let nextId = Math.max(...todos.map(t => t.id), 0) + 1;
+
+        const form = document.getElementById('todoForm');
+        const input = document.getElementById('todoInput');
+        const todoList = document.getElementById('todoList');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const task = input.value.trim();
+            if (task) {
+                const newTodo = {
+                    id: nextId++,
+                    task: task,
+                    completed: false
+                };
+                todos.push(newTodo);
+                saveTodos();
+                input.value = '';
+                renderTodos();
+            }
+        });
+
+        document.querySelectorAll('.task-filter').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.task-filter').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilter = e.target.dataset.filter;
+                renderTodos();
+            });
+        });
+
+        function renderTodos() {
+            let filteredTodos = todos;
+            if (currentFilter === 'completed') {
+                filteredTodos = todos.filter(todo => todo.completed);
+            } else if (currentFilter === 'pending') {
+                filteredTodos = todos.filter(todo => !todo.completed);
+            }
+
+            if (filteredTodos.length === 0) {
+                todoList.innerHTML = '<div class="empty-state">No tasks found!</div>';
+            } else {
+                todoList.innerHTML = filteredTodos.map(todo => 
+                    `<div class="todo-item ${todo.completed ? 'completed' : ''}">
+                        <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${todo.id})">
+                        <span class="todo-text">${todo.task}</span>
+                        <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
+                    </div>`
+                ).join('');
+            }
+        }
+
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                saveTodos();
+                renderTodos();
+            }
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(t => t.id !== id);
+            saveTodos();
+            renderTodos();
+        }
+
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        renderTodos();
+    </script>
+</body>
+</html>
